@@ -4,10 +4,10 @@ import Sessions
 import SteamPress
 import Foundation
 import VaporSecurityHeaders
+import VaporPostgreSQL
 
 let drop = Droplet()
-let database = Database(MemoryDriver())
-drop.database = database
+try drop.addProvider(VaporPostgreSQL.Provider.self)
 
 let memory = MemorySessions()
 let sessions = SessionsMiddleware(sessions: memory)
@@ -19,13 +19,13 @@ try drop.addProvider(SteamPress.Provider.self)
 
 drop.get { req in
     var posts = try BlogPost.query().sort("created", .descending).limit(3).all()
-    
+
     var parameters: [String: Node] = [:]
-    
+
     if posts.count > 0 {
         parameters["posts"] = try posts.makeNode(context: BlogPostContext.shortSnippet)
     }
-    
+
     return try drop.view.make("index", parameters)
 }
 
@@ -35,4 +35,3 @@ drop.get("about") { req in
 
 
 drop.run()
-
